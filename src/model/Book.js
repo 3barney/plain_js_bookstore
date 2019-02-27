@@ -44,7 +44,7 @@ Book.retrieveAll = function() {
 }
 
 Book.convertRecordToObject = function(bookItem) {
-  var book = Book(bookItem);
+  var book = new Book(bookItem);
   return book;
 }
 
