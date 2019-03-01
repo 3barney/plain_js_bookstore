@@ -8,7 +8,7 @@ function Book(slots) {
   if (arguments.length > 0) {
     this.setIsbn(slots.isbn);
     this.setTitle(slots.title);
-    this.setYear(slot.year);
+    this.setYear(slots.year);
 
     if (slots.edition) { // optional field
       this.setEdition(slots.edition);
@@ -22,9 +22,8 @@ Book.instances= {};
 
 /*********** CHECKS AND SETTERS ********************/
 Book.checkIsbn = function(id) {
-  if (!id) {
-    return new NoConstraintViolation();
-  } else if (typeof(id) !== "string" || id.trim() === "") {
+  if (id === undefined) return new NoConstraintViolation();
+  else if (typeof(id) !== "string" || id.trim() === "") {
     return new RangeConstraintViolation("ISBN cannot be empty")
   } else if (!/\b\d{9}(\d|X)\b/.test( id)) {
     return new PatternConstraintViolation("ISBN must be a 10 digit string or a 9-digit string followed by 'X'!")    
@@ -43,7 +42,7 @@ Book.checkIsbnAsId = function(id) {
     } else {
       constraintViolation = new NoConstraintViolation();
     }
-  } 
+  }
   return constraintViolation;
 }
 
@@ -79,7 +78,7 @@ Book.checkYear = function(year) {
   var yearOfFirstBook = 1459;
   if (year === undefined) {
     return new MandatoryValueConstraintViolation("A publication year must be provided!");
-  } else if (util.isIntegerOrIntegerString(year)) {
+  } else if (!util.isIntegerOrIntegerString(year)) {
     return new RangeConstraintViolation("The value of year must be an integer!")
   } else {
     if (typeof year === "string") year = parseInt(year);
@@ -93,7 +92,7 @@ Book.checkYear = function(year) {
 }
 
 Book.prototype.setYear = function(year) {
-  var validationResult = Book.checkYear();
+  var validationResult = Book.checkYear(year);
   if (validationResult instanceof NoConstraintViolation) {
     this.year = parseInt(year)
   } else {
@@ -180,7 +179,7 @@ Book.convertRecordToObject = function(bookItem) {
   try {
     book = new Book(bookItem);
   } catch (exception) {
-    console.log(exception.constructor.name + " While deserializing a book row " + e.message);
+    console.log(exception.constructor.name + " While deserializing a book row " + exception.message);
   }
 
   return book;
