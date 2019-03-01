@@ -5,10 +5,38 @@ publicLibrary.view.updateBook = {
             saveButton = formElement.commit,
             selectBookElement = formElement.selectBook;
 
-        var key ="", keys=[], book=null, optionElement=null;
+        // var key ="", keys=[], book=null, optionElement=null;
 
         Book.retrieveAll()
 
+        util.fillSelectWithOptions(Book.instances, selectBookElement, "isbn", "title");
+
+        selectBookElement.addEventListener("change", function() {
+            var book = null, bookKey = selectBookElement.value;
+            if (bookKey) {
+                book = Book.instances[bookKey];
+
+                ["isbn", "title", "year", "edition"].forEach(function(item){
+                    formElement[item].value = book[item] !== undefined ? book[item] : "";
+                    // clear custom validation err message which may have not been set b4
+                    formElement[item].setCustomValidity("");
+                });
+            } else {
+                formElement.reset()
+            }
+        })
+
+        formElement.title.addEventListener("input", function() {
+            formElement.title.setCustomValidity(Book.checkTitle(formElement.title.value).message)
+        });
+        formElement.year.addEventListener("input", function() {
+            formElement.year.setCustomValidity(Book.checkYear(formElement.year.value).message);
+        });
+        formElement.edition.addEventListener("input", function() {
+            var v = formElement.edition.value, ed = v ? parseInt(v) : undefined
+            formElement.edition.setCustomValidity(Book.checkEdition(ed).message);
+        });
+        /** 
         // populate selection with all books
         keys = Object.keys(Book.instances)
         for(i=0; i<keys.length; i++) {
@@ -32,9 +60,14 @@ publicLibrary.view.updateBook = {
             } else {
                 formElement.reset()
             }
-        });
+        }); **/
 
         saveButton.addEventListener("click", publicLibrary.view.updateBook.handleUpdateButtonClickEvent);
+        
+        formElement.addEventListener("submit", function(event) {
+            event.preventDefault()
+            formElement.reset()
+        })
 
         window.addEventListener("beforeunload", function() {
             Book.saveAll()
@@ -42,15 +75,28 @@ publicLibrary.view.updateBook = {
     },
 
     handleUpdateButtonClickEvent: function() {
-        var formElement = document.forms['Book'];
+        var formElement = document.forms['Book'],
+            selectBookElement = formElement.selectBook; 
 
         var slots = {
             isbn: formElement.isbn.value,
             title: formElement.title.value,
-            year: formElement.year.value
+            year: formElement.year.value,
+            edition: formElement.edition.value
         };
 
-        Book.update(slots);
+        formElement.title.setCustomValidity(Book.checkTitle(slots.title).message);
+        formElement.year.setCustomValidity(Book.checkYear(slots.year).message);
+        formElement.edition.setCustomValidity(Book.checkEdition(slots.edition).message);
+
+        if (formElement.checkValidity()) {
+            Book.update(slots);
+
+            // update the selection list option
+            selectBookElement.options[selectBookElement.selectedIndex].text = slots.title;
+        }
+
+        
         formElement.reset();
     }
 }
