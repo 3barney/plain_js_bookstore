@@ -1,15 +1,47 @@
 // Book model class
 
+var LanguageEL = new Enumeration({
+  "en":"English",
+  "de":"German",
+  "fr":"French",
+  "es":"Spanish"
+});
+
+
+var BookCategoryEL = new Enumeration([
+  "novel",
+  "biography",
+  "textbook",
+  "other"
+]);
+
+var PublicationFormEL = new Enumeration([
+  "hardcover",
+  "paperback",
+  "ePub",
+  "PDF"
+]);
+
 function Book(slots) {
   this.isbn = "";
   this.title = "";
   this.year = 0; // Int value
+
+  this.originalLanguage = 0; // number from languageEl
+  this.otherAvailableLanguages = [] // list of numbers from LanguageEl
+  this.category = 0; // number from BookCategoryEL
+  this.publicationForms = []; // List of no from PublicationFormEl
 
   if (arguments.length > 0) {
     this.setIsbn(slots.isbn);
     this.setTitle(slots.title);
     this.setYear(slots.year);
 
+    this.setOriginalLanguage(slots.originalLanguage);
+    this.setOtherAvailableLanguages(slots.otherAvailableLanguages);
+    this.setCategory(slots.category);
+    this.setPublicationForms(slots.publicationForms);
+    
     if (slots.edition) { // optional field
       this.setEdition(slots.edition);
     }
@@ -19,6 +51,117 @@ function Book(slots) {
 // class-level property representing the collection of all Book instances managed by app
 // Initially collection is empty, (empty object literal)
 Book.instances= {};
+
+/************* ENUM Get and Setters ********************/
+Book.checkOriginalLanguage = function(langValue) {
+  if (langValue === undefined) {
+    return new MandatoryValueConstraintViolation("An original language must be provided");
+  } else if (!Number.isInteger(langValue) || langValue < 1 || langValue > LanguageEL.MAX) {
+    return new RangeConstraintViolation("Invalid value for original language" + l);
+  } else {
+    return new NoConstraintViolation();
+  }
+}
+Book.prototype.setOriginalLanguage = function(languageValue) {
+  console.log("lang", languageValue)
+  var constraintViolation = Book.checkOriginalLanguage(languageValue);
+  if (constraintViolation instanceof NoConstraintViolation) {
+    this.originalLanguage = languageValue;
+  } else {
+    throw constraintViolation;
+  }
+}
+
+Book.checkOtherAvailablelanguage = function(otherLang) {
+  if (!Number.isInteger(otherLang) || otherLang < 1 || otherLang > LanguageEL.MAX) {
+    return new RangeConstraintViolation("invalid value for other available language");
+  } else {
+    return new NoConstraintViolation();
+  }
+}
+
+Book.checkOtherAvailablelanguages = function(otherLangs) {
+  var i=0, constraintViolation = null;
+  if (otherLangs == undefined || (Array.isArray(otherLangs) && otherLangs.length === 0)) {
+    return new NoConstraintViolation();
+  } else if (!Array.isArray(otherLangs)) {
+    return new RangeConstraintViolation("The value of other languages must be an array");
+  } else {
+    for (i=0; i<otherLangs.length; i++) {
+      constraintViolation = Book.checkOtherAvailablelanguage(otherLangs[i]);
+      if (!(constraintViolation instanceof NoConstraintViolation)) {
+        return constraintViolation;
+      }
+    }
+    return new NoConstraintViolation();
+  }
+}
+
+Book.prototype.setOtherAvailableLanguages = function(otherlangs) {
+  var constraintViolation = Book.checkOtherAvailablelanguages(otherlangs);
+  if (constraintViolation instanceof NoConstraintViolation) {
+    this.otherAvailableLanguages = otherlangs
+  } else {
+    throw constraintViolation;
+  }
+}
+
+
+Book.checkCategory = function(category) {
+  if (category === undefined || isNaN(category)) {
+    return new MandatoryValueConstraintViolation("A category must be provided");
+  } else if (!Number.isInteger(category) || category < 1 || category > BookCategoryEL.MAX) {
+    return new RangeConstraintViolation("Invalid value for category");
+  } else {
+    return new NoConstraintViolation();
+  }
+}
+
+Book.prototype.setCategory = function(category) {
+  var constraintViolation = Book.checkCategory(category);
+  if (constraintViolation instanceof NoConstraintViolation) {
+    this.category = category;
+  } else {
+    throw constraintViolation;
+  }
+}
+
+Book.checkPublicationForm = function(pubForm) {
+  if (pubForm == undefined) {
+    return new MandatoryValueConstraintViolation("No publication form provided");
+  } else if (!Number.isInteger(pubForm) || pubForm < 1 || pubForm > PublicationFormEL.MAX) {
+    return new RangeConstraintViolation("Invalid value for publication form" + pubForm);
+  } else {
+    return new NoConstraintViolation();
+  }
+}
+
+//Check if all members of a set of values are valid enumeration indexes 
+Book.checkPublicationForms = function(pubForms) {
+  var i = 0; constraintViolation = null;
+  if (pubForms == undefined || (Array.isArray(pubForms) && pubForms.length === 0)) {
+    return new MandatoryValueConstraintViolation("No publication form provided");
+  } else if (!Array.isArray(pubForms)) {
+    return new RangeConstraintViolation("Value of publication forms MUST be an array");
+  } else {
+    for (i=0; i<pubForms.length; i++) {
+      constraintViolation = Book.checkPublicationForm(pubForms[i]);
+      if (!(constraintViolation instanceof NoConstraintViolation)) {
+        return constraintViolation;
+      }
+    }
+    return new NoConstraintViolation();
+  }
+}
+
+Book.prototype.setPublicationForms = function(pubForms) { 
+  var constraintViolation = Book.checkPublicationForms(pubForms);
+  if (constraintViolation instanceof NoConstraintViolation) {
+    this.publicationForms = pubForms;
+  } else {
+    throw constraintViolation;
+  }
+}
 
 /*********** CHECKS AND SETTERS ********************/
 Book.checkIsbn = function(id) {
@@ -127,7 +270,12 @@ Book.prototype.setEdition = function(edition) {
 }
 
 Book.prototype.toString = function() {
-  return "Book{ ISBN:" + this.isbn + ", title:" + this.title + ", year:" + this.year + "}"; 
+  return "Book{ ISBN:" + this.isbn + ", title:" + this.title + 
+      ", originalLanguage: " + this.originalLanguage +
+      ", otherAvailableLanguage: " + this.otherAvailableLanguages.toString() +
+      ", category: " + this.category + "publicationForms:" +
+      this.publicationForms.toString(), " year:" + this.year +
+  "}"; 
 }
 
 
@@ -152,7 +300,7 @@ Book.add = function(slots) {
 
 // Fetch books stored in local storage
 Book.retrieveAll = function() {
-  var key = "", keys= [], index= 0, bookString="", books={};
+  var key = "", keys= [], i= 0, bookString="", books={};
 
   try {
     if (localStorage["books"]) {
@@ -202,6 +350,31 @@ Book.update = function(slots) {
       book.setYear(slots.year);
       updatedProperties.push("year");
     }
+
+    if (book.edition !== parseInt(slots.edition)) {
+      book.setEdition(slots.edition);
+      updatedProperties.push("edition")
+    }
+
+    if (book.originalLanguage !== slots.originalLanguage) {
+      book.setOriginalLanguage(slots.originalLanguage);
+      updatedProperties.push("originallanguage")
+    }
+
+    if (!book.otherAvailableLanguages.isEqualTo(slots.otherAvailableLanguages)) {
+      book.setOtherAvailableLanguages(slots.otherAvailableLanguages);
+      updatedProperties.push("otherAvailableLanguage");
+    }
+
+    if (book.category !== slots.category) {
+      book.setCategory = slots.category;
+      updatedProperties.push("category");
+    }
+
+    if (!book.publicationForms.isEqualTo(slots.publicationForms)) {
+      book.setPublicationForms(slots.publicationForms);
+      updatedProperties.push("publicationForms");
+    }
   } catch (exception) {
     console.log( exception.constructor.name + ": "+ exception.message);
     noConstraintViolation = false;
@@ -245,18 +418,31 @@ Book.saveAll = function() {
   if (!error) console.log( numberofBooks + " books saved");
 }
 
-
-Book.createTestData = function() {
+// TEST METHODS
+Book.createTestData = function () {
   try {
-    Book.instances["006251587X"] = new Book({isbn:"006251587X", title:"Weaving the Web", year:2000, edition: 2});
-    Book.instances["0465026567"] = new Book({isbn:"0465026567", title:"Gödel, Escher, Bach", year:1999});
-    Book.instances["0465030793"] = new Book({isbn:"0465030793", title:"I Am A Strange Loop", year:2008});
 
+    console.log(LanguageEL.EN)
+
+    Book.instances["006251587X"] = new Book({isbn:"006251587X", title:"Weaving the Web", year: 2000,
+        originalLanguage:LanguageEL.EN, otherAvailableLanguages:[LanguageEL.DE,LanguageEL.FR], 
+        category:BookCategoryEL.NOVEL, publicationForms:[PublicationFormEL.EPUB,PublicationFormEL.PDF]});
+    
+    Book.instances["0465026567"] = new Book({isbn:"0465026567", title:"Gödel, Escher, Bach", year:1945,
+        originalLanguage:LanguageEL.DE, otherAvailableLanguages:[LanguageEL.FR], 
+        category:BookCategoryEL.OTHER, publicationForms:[PublicationFormEL.PDF]});
+    
+    Book.instances["0465030793"] = new Book({isbn:"0465030793", title:"I Am A Strange Loop", year: 1987,
+        originalLanguage:LanguageEL.EN, otherAvailableLanguages:[], 
+        category:BookCategoryEL.TEXTBOOK, publicationForms:[PublicationFormEL.EPUB]});
+    
+        
+    console.log(Book.instances)
     Book.saveAll();
-  } catch (exception) {
-    console.log(exception.constructor.name +": " + exception.message);
+  } catch (e) {
+    console.log( e.constructor.name + ": " + e.message);
   }
-}
+};
 
 Book.clearData = function() {
   if (confirm("Do you really want to delete all book data?")) {
