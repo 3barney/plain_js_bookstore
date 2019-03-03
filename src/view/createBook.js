@@ -9,6 +9,45 @@ publicLibrary.view.createBook = {
 
     var formElement = document.forms['Book'];
     var saveButton = formElement.commit;
+    var origLangSelEl = formElement.originalLanguage,
+        otherAvailLangSelEl = formElement.otherAvailableLanguage,
+        categoryFieldsetEl = formElement.querySelector(
+            "fieldset[data-bind='category']"),
+        pubFormsFieldsetEl = formElement.querySelector(
+            "fieldset[data-bind='publicationForms']");
+    
+    // set up the originalLanguage selection list
+    util.fillSelectWithOptions(origLangSelEl, LanguageEL.labels);
+    // set up the otherAvailableLanguages selection list
+    util.fillSelectWithOptions(otherAvailLangSelEl, LanguageEL.labels);
+
+    // set up the category radio button group
+    util.createChoiceWidget( categoryFieldsetEl, "category", [], 
+        "radio", BookCategoryEL.labels);
+    // set up the publicationForms checkbox group
+    util.createChoiceWidget( pubFormsFieldsetEl, "publicationForms", [], 
+        "checkbox", PublicationFormEL.labels);
+    // add event listeners for responsive validation
+
+    // simplified validation: check only mandatory value
+    origLangSelEl.addEventListener("change", function () {
+      origLangSelEl.setCustomValidity( 
+          (!origLangSelEl.value) ? "A value must be selected!":"" );
+    });
+
+    // mandatory value check
+    categoryFieldsetEl.addEventListener("click", function () {
+      formElement.category[0].setCustomValidity( 
+          (!categoryFieldsetEl.getAttribute("data-value")) ? 
+              "A category must be selected!":"" );
+    });
+    // mandatory value check
+    pubFormsFieldsetEl.addEventListener("click", function () {
+      var val = pubFormsFieldsetEl.getAttribute("data-value");
+      formElement.publicationForms[0].setCustomValidity( 
+          (!val || Array.isArray(val) && val.length === 0) ? 
+              "At least one publication form must be selected!":"" );
+    });
   
     formElement.isbn.addEventListener("input", function() {
       formElement.isbn.setCustomValidity(

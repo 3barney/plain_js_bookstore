@@ -50,6 +50,25 @@
         <label>Edition: <input name="edition" /></label>
       </div>
 
+      <div class="pure-control-group">
+        <label for="originalLanguage">Original language</label>
+        <select id="originalLanguage" name="originalLanguage"></select>
+      </div>
+  
+      <div class="pure-control-group">
+        <label for="otherAvailableLanguages">Other available languages</label>
+        <select id="otherAvailableLanguages" name="otherAvailableLanguages" 
+            multiple="multiple"></select>
+      </div>
+      
+      <fieldset class="pure-controls" data-bind="category">
+        <legend>Category</legend>
+      </fieldset>
+
+      <fieldset class="pure-controls" data-bind="publicationForms">
+        <legend>Publication forms</legend>
+      </fieldset>
+
       <div>
         <button type="button" name="commit">Save Changes</button>
       </div>
